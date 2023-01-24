@@ -1338,7 +1338,7 @@ impl PeerConnectionInternal {
                 None => continue,
             };
 
-            let track = match sender.track().await {
+            let track = match sender.track() {
                 Some(track) => track,
                 None => continue,
             };

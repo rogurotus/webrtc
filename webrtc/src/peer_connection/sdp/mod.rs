@@ -461,7 +461,7 @@ pub(crate) async fn add_transceiver_sdp(
     }
     if codecs.is_empty() {
         // If we are sender and we have no codecs throw an error early
-        if t.sender().await.track().await.is_some() {
+        if t.sender().await.track().is_some() {
             return Err(Error::ErrSenderWithNoCodecs);
         }
 
@@ -531,7 +531,7 @@ pub(crate) async fn add_transceiver_sdp(
 
     for mt in transceivers {
         let sender = mt.sender().await;
-        if let Some(track) = sender.track().await {
+        if let Some(track) = sender.track() {
             media = media.with_media_source(
                 sender.ssrc,
                 track.stream_id().to_owned(), /* cname */

@@ -1679,7 +1679,7 @@ impl RTCPeerConnection {
             for t in &*rtp_transceivers {
                 if !t.stopped.load(Ordering::SeqCst) && t.kind == track.kind() {
                     let sender = t.sender().await;
-                    if sender.track().await.is_none() {
+                    if sender.track().is_none() {
                         if let Err(err) = sender.replace_track(Some(track)).await {
                             let _ = sender.stop().await;
                             return Err(err);
@@ -1719,7 +1719,7 @@ impl RTCPeerConnection {
             let rtp_transceivers = self.internal.rtp_transceivers.lock().await;
             for t in &*rtp_transceivers {
                 if t.sender().await.id == sender.id {
-                    if sender.track().await.is_none() {
+                    if sender.track().is_none() {
                         return Ok(());
                     }
                     transceiver = Some(t.clone());

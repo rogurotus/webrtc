@@ -15,6 +15,7 @@ use crate::track::track_local::{
     InterceptorToTrackLocalWriter, TrackLocal, TrackLocalContext, TrackLocalWriter,
 };
 
+use arc_swap::ArcSwapOption;
 use ice::rand::generate_crypto_random_string;
 use interceptor::stream_info::StreamInfo;
 use interceptor::{Attributes, Interceptor, RTCPReader, RTPWriter};
@@ -77,7 +78,7 @@ impl RTPSenderInternal {
 
 /// RTPSender allows an application to control how a given Track is encoded and transmitted to a remote peer
 pub struct RTCRtpSender {
-    pub(crate) track: Mutex<Option<Arc<dyn TrackLocal + Send + Sync>>>,
+    pub(crate) track: ArcSwapOption<Arc<dyn TrackLocal + Send + Sync>>,
 
     pub(crate) srtp_stream: Arc<SrtpWriterFuture>,
     pub(crate) stream_info: Mutex<StreamInfo>,
@@ -171,7 +172,7 @@ impl RTCRtpSender {
             .map(|track| vec![track.stream_id().to_string()])
             .unwrap_or_default();
         RTCRtpSender {
-            track: Mutex::new(track),
+            track: ArcSwapOption::new(track.map(Arc::new)),
 
             srtp_stream,
             stream_info: Mutex::new(StreamInfo::default()),
@@ -237,12 +238,7 @@ impl RTCRtpSender {
     /// transmission of media on the sender's track.
     pub async fn get_parameters(&self) -> RTCRtpSendParameters {
         let kind = {
-            let track = self.track.lock().await;
-            if let Some(t) = &*track {
-                t.kind()
-            } else {
-                RTPCodecType::default()
-            }
+            self.track.load().as_ref().map(|t| t.kind()).unwrap_or_default()
         };
 
         let mut send_parameters = {
@@ -277,9 +273,8 @@ impl RTCRtpSender {
     }
 
     /// track returns the RTCRtpTransceiver track, or nil
-    pub async fn track(&self) -> Option<Arc<dyn TrackLocal + Send + Sync>> {
-        let track = self.track.lock().await;
-        track.clone()
+    pub fn track(&self) -> Option<Arc<dyn TrackLocal + Send + Sync>> {
+        self.track.load().as_ref().map(|t| t.as_ref().clone())
     }
 
     /// replace_track replaces the track currently being used as the sender's source with a new TrackLocal.
@@ -305,10 +300,7 @@ impl RTCRtpSender {
         }
 
         if self.has_sent().await {
-            let t = {
-                let t = self.track.lock().await;
-                t.clone()
-            };
+            let t = self.track();
             if let Some(t) = t {
                 let context = self.context.lock().await;
                 t.unbind(&context).await?;
@@ -316,8 +308,7 @@ impl RTCRtpSender {
         }
 
         if !self.has_sent().await || track.is_none() {
-            let mut t = self.track.lock().await;
-            *t = track;
+            self.track.store(track.map(Arc::new));
             return Ok(());
         }
 
@@ -346,8 +337,7 @@ impl RTCRtpSender {
         match result {
             Err(err) => {
                 // Re-bind the original track
-                let track = self.track.lock().await;
-                if let Some(t) = &*track {
+                if let Some(t) = self.track.load().as_ref() {
                     t.bind(&context).await?;
                 }
 
@@ -361,8 +351,7 @@ impl RTCRtpSender {
                 }
 
                 {
-                    let mut t = self.track.lock().await;
-                    *t = track;
+                    self.track.store(track.map(Arc::new))
                 }
 
                 Ok(())
@@ -378,13 +367,13 @@ impl RTCRtpSender {
 
         let write_stream = Arc::new(InterceptorToTrackLocalWriter::new(self.paused.clone()));
         let (context, stream_info) = {
-            let track = self.track.lock().await;
+            let track = self.track.load();
             let mut context = TrackLocalContext {
                 id: self.id.clone(),
                 params: self
                     .media_engine
                     .get_rtp_parameters_by_kind(
-                        if let Some(t) = &*track {
+                        if let Some(t) = track.as_ref() {
                             t.kind()
                         } else {
                             RTPCodecType::default()
@@ -399,7 +388,7 @@ impl RTCRtpSender {
                 paused: self.paused.clone(),
             };
 
-            let codec = if let Some(t) = &*track {
+            let codec = if let Some(t) = track.as_ref() {
                 t.bind(&context).await?
             } else {
                 RTCRtpCodecParameters::default()
