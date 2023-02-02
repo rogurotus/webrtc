@@ -4,6 +4,7 @@ mod rtp_sender_test;
 use crate::api::media_engine::MediaEngine;
 use crate::dtls_transport::RTCDtlsTransport;
 use crate::error::{Error, Result};
+use crate::peer_connection::math_rand_alpha;
 use crate::rtp_transceiver::rtp_codec::{RTCRtpCodecParameters, RTPCodecType};
 use crate::rtp_transceiver::rtp_transceiver_direction::RTCRtpTransceiverDirection;
 use crate::rtp_transceiver::srtp_writer_future::SrtpWriterFuture;
@@ -21,7 +22,7 @@ use interceptor::stream_info::StreamInfo;
 use interceptor::{Attributes, Interceptor, RTCPReader, RTPWriter};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Weak};
-use tokio::sync::{mpsc, Mutex, Notify};
+use tokio::sync::{mpsc, Mutex, Notify, OnceCell};
 
 pub(crate) struct RTPSenderInternal {
     pub(crate) send_called_rx: Mutex<mpsc::Receiver<()>>,
@@ -102,7 +103,7 @@ pub struct RTCRtpSender {
 
     /// The id of the initial track, even if we later change to a different
     /// track id should be use when negotiating.
-    pub(crate) initial_track_id: std::sync::Mutex<Option<String>>,
+    pub(crate) initial_track_id: OnceCell<String>,
     /// AssociatedMediaStreamIds from the WebRTC specifcations
     pub(crate) associated_media_stream_ids: std::sync::Mutex<Vec<String>>,
 
@@ -170,7 +171,7 @@ impl RTCRtpSender {
         let stream_ids = track
             .as_ref()
             .map(|track| vec![track.stream_id().to_string()])
-            .unwrap_or_default();
+            .unwrap_or_else(|| vec![math_rand_alpha(16)]);
         RTCRtpSender {
             track: ArcSwapOption::new(track.map(Arc::new)),
 
@@ -190,7 +191,7 @@ impl RTCRtpSender {
             interceptor,
 
             id,
-            initial_track_id: std::sync::Mutex::new(None),
+            initial_track_id: OnceCell::new(),
             associated_media_stream_ids: std::sync::Mutex::new(stream_ids),
 
             rtp_transceiver: Mutex::new(None),
@@ -484,21 +485,13 @@ impl RTCRtpSender {
     }
 
     pub(crate) fn initial_track_id(&self) -> Option<String> {
-        let lock = self.initial_track_id.lock().unwrap();
-
-        lock.clone()
+        self.initial_track_id.get().map(Clone::clone)
     }
 
     pub(crate) fn set_initial_track_id(&self, id: String) -> Result<()> {
-        let mut lock = self.initial_track_id.lock().unwrap();
-
-        if lock.is_some() {
-            return Err(Error::ErrSenderInitialTrackIdAlreadySet);
-        }
-
-        *lock = Some(id);
-
-        Ok(())
+        self.initial_track_id
+            .set(id)
+            .map_err(|_| Error::ErrSenderInitialTrackIdAlreadySet)
     }
 
     pub(crate) fn associate_media_stream_id(&self, id: String) -> bool {

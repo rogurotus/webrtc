@@ -18,6 +18,7 @@ use crate::rtp_transceiver::{PayloadType, RTCPFeedback, SSRC};
 pub mod sdp_type;
 pub mod session_description;
 
+use super::math_rand_alpha;
 use crate::peer_connection::MEDIA_SECTION_APPLICATION;
 use crate::SDP_ATTRIBUTE_RID;
 use ice::candidate::candidate_base::unmarshal_candidate;
@@ -410,6 +411,7 @@ pub(crate) async fn add_transceiver_sdp(
     media_section: &MediaSection,
     params: AddTransceiverSdpParams,
 ) -> Result<(SessionDescription, bool)> {
+    println!("CALL");
     if media_section.transceivers.is_empty() {
         return Err(Error::ErrSDPZeroTransceivers);
     }
@@ -529,7 +531,7 @@ pub(crate) async fn add_transceiver_sdp(
         );
     }
 
-    for mt in transceivers {
+    if let Some(mt) = transceivers.first() {
         let sender = mt.sender().await;
         if let Some(track) = sender.track() {
             media = media.with_media_source(
@@ -549,11 +551,13 @@ pub(crate) async fn add_transceiver_sdp(
                 }
 
                 sender.set_initial_track_id(track.id().to_string())?;
-                break;
             }
-        }
-
-        if let Some(track_id) = sender.initial_track_id() {
+        } else {
+            let track_id = sender.initial_track_id().unwrap_or_else(|| {
+                let id = math_rand_alpha(16);
+                sender.set_initial_track_id(id.clone()).unwrap();
+                id
+            });
             // After we have include an msid attribute in an offer it must stay the same for
             // all subsequent offer even if the track or transceiver direction changes.
             //
@@ -565,11 +569,11 @@ pub(crate) async fn add_transceiver_sdp(
             // or track.  If no "a=msid" line is present in the current
             // description, "a=msid" line(s) MUST be generated according to the
             // same rules as for an initial offer.
-            for stream_id in sender.associated_media_stream_ids() {
-                media = media.with_property_attribute(format!("msid:{} {}", stream_id, track_id));
-            }
 
-            break;
+            for stream_id in sender.associated_media_stream_ids() {
+                println!("ADD {track_id}");
+                media = media.with_property_attribute(format!("msid:{stream_id} {track_id}"));
+            }
         }
     }
 
@@ -844,8 +848,8 @@ pub(crate) fn have_application_media_section(desc: &SessionDescription) -> bool 
     false
 }
 
-pub(crate) fn get_by_mid<'a, 'b>(
-    search_mid: &'a str,
+pub(crate) fn get_by_mid<'b>(
+    search_mid: &str,
     desc: &'b session_description::RTCSessionDescription,
 ) -> Option<&'b MediaDescription> {
     if let Some(parsed) = &desc.parsed {
