@@ -54,7 +54,7 @@ impl std::fmt::Display for PacketType {
             PacketType::PayloadSpecificFeedback => "PSFB",
             PacketType::ExtendedReport => "XR",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 

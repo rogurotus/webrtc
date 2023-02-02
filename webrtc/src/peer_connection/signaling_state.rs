@@ -87,20 +87,20 @@ impl From<&str> for RTCSignalingState {
 impl fmt::Display for RTCSignalingState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            RTCSignalingState::Stable => write!(f, "{}", SIGNALING_STATE_STABLE_STR),
+            RTCSignalingState::Stable => write!(f, "{SIGNALING_STATE_STABLE_STR}"),
             RTCSignalingState::HaveLocalOffer => {
-                write!(f, "{}", SIGNALING_STATE_HAVE_LOCAL_OFFER_STR)
+                write!(f, "{SIGNALING_STATE_HAVE_LOCAL_OFFER_STR}")
             }
             RTCSignalingState::HaveRemoteOffer => {
-                write!(f, "{}", SIGNALING_STATE_HAVE_REMOTE_OFFER_STR)
+                write!(f, "{SIGNALING_STATE_HAVE_REMOTE_OFFER_STR}")
             }
             RTCSignalingState::HaveLocalPranswer => {
-                write!(f, "{}", SIGNALING_STATE_HAVE_LOCAL_PRANSWER_STR)
+                write!(f, "{SIGNALING_STATE_HAVE_LOCAL_PRANSWER_STR}")
             }
             RTCSignalingState::HaveRemotePranswer => {
-                write!(f, "{}", SIGNALING_STATE_HAVE_REMOTE_PRANSWER_STR)
+                write!(f, "{SIGNALING_STATE_HAVE_REMOTE_PRANSWER_STR}")
             }
-            RTCSignalingState::Closed => write!(f, "{}", SIGNALING_STATE_CLOSED_STR),
+            RTCSignalingState::Closed => write!(f, "{SIGNALING_STATE_CLOSED_STR}"),
             _ => write!(f, "{}", crate::UNSPECIFIED_STR),
         }
     }

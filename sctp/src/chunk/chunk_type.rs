@@ -47,7 +47,7 @@ impl fmt::Display for ChunkType {
             CT_FORWARD_TSN => "FORWARD-TSN",
             _ => others.as_str(),
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 

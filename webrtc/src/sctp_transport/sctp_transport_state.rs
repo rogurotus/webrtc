@@ -62,7 +62,7 @@ impl fmt::Display for RTCSctpTransportState {
             RTCSctpTransportState::Closed => SCTP_TRANSPORT_STATE_CLOSED_STR,
             RTCSctpTransportState::Unspecified => crate::UNSPECIFIED_STR,
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 

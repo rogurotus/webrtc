@@ -73,7 +73,7 @@ impl fmt::Display for RTCDataChannelState {
             RTCDataChannelState::Closed => DATA_CHANNEL_STATE_CLOSED_STR,
             RTCDataChannelState::Unspecified => crate::UNSPECIFIED_STR,
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 

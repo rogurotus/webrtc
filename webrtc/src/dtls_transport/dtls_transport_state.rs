@@ -76,7 +76,7 @@ impl fmt::Display for RTCDtlsTransportState {
             RTCDtlsTransportState::Failed => DTLS_TRANSPORT_STATE_FAILED_STR,
             RTCDtlsTransportState::Unspecified => crate::UNSPECIFIED_STR,
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 

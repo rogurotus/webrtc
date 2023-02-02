@@ -87,7 +87,7 @@ impl fmt::Display for RTCPeerConnectionState {
             RTCPeerConnectionState::Closed => PEER_CONNECTION_STATE_CLOSED_STR,
             RTCPeerConnectionState::Unspecified => crate::UNSPECIFIED_STR,
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 

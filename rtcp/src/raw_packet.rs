@@ -13,7 +13,7 @@ pub struct RawPacket(pub Bytes);
 
 impl fmt::Display for RawPacket {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "RawPacket: {:?}", self)
+        write!(f, "RawPacket: {self:?}")
     }
 }
 

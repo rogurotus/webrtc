@@ -97,7 +97,7 @@ impl fmt::Display for RTCIceConnectionState {
             RTCIceConnectionState::Closed => ICE_CONNECTION_STATE_CLOSED_STR,
             RTCIceConnectionState::Unspecified => crate::UNSPECIFIED_STR,
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
