@@ -238,7 +238,11 @@ impl RTCRtpSender {
     /// transmission of media on the sender's track.
     pub async fn get_parameters(&self) -> RTCRtpSendParameters {
         let kind = {
-            self.track.load().as_ref().map(|t| t.kind()).unwrap_or_default()
+            self.track
+                .load()
+                .as_ref()
+                .map(|t| t.kind())
+                .unwrap_or_default()
         };
 
         let mut send_parameters = {
