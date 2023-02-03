@@ -251,15 +251,15 @@ pub(crate) async fn connect_with_vnet(
     // Manual signaling
     let (a_ufrag, a_pwd) = a_agent.get_local_user_credentials().await;
     let (b_ufrag, b_pwd) = b_agent.get_local_user_credentials().await;
+    let (set_remote_credentials_tx, _) = mpsc::channel(1);
 
     gather_and_exchange_candidates(a_agent, b_agent).await?;
-
     let (accepted_tx, mut accepted_rx) = mpsc::channel(1);
     let (_a_cancel_tx, a_cancel_rx) = mpsc::channel(1);
 
     let agent_a = Arc::clone(a_agent);
     tokio::spawn(async move {
-        let a_conn = agent_a.accept(a_cancel_rx, b_ufrag, b_pwd).await?;
+        let a_conn = agent_a.accept(a_cancel_rx, b_ufrag, b_pwd, &set_remote_credentials_tx).await?;
 
         let _ = accepted_tx.send(a_conn).await;
 
@@ -267,7 +267,8 @@ pub(crate) async fn connect_with_vnet(
     });
 
     let (_b_cancel_tx, b_cancel_rx) = mpsc::channel(1);
-    let b_conn = b_agent.dial(b_cancel_rx, a_ufrag, a_pwd).await?;
+    let (set_remote_credentials_tx2, _) = mpsc::channel(1);
+    let b_conn = b_agent.dial(b_cancel_rx, a_ufrag, a_pwd, &set_remote_credentials_tx2).await?;
 
     // Ensure accepted
     if let Some(a_conn) = accepted_rx.recv().await {

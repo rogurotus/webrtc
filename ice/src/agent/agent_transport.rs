@@ -18,11 +18,13 @@ impl Agent {
         mut cancel_rx: mpsc::Receiver<()>,
         remote_ufrag: String,
         remote_pwd: String,
+        set_remote_credentials_tx: &mpsc::Sender<()>
     ) -> Result<Arc<impl Conn>> {
         let (on_connected_rx, agent_conn) = {
             self.internal
                 .start_connectivity_checks(true, remote_ufrag, remote_pwd)
                 .await?;
+            drop(set_remote_credentials_tx.send(()).await);
 
             let mut on_connected_rx = self.internal.on_connected_rx.lock().await;
             (
@@ -53,11 +55,13 @@ impl Agent {
         mut cancel_rx: mpsc::Receiver<()>,
         remote_ufrag: String,
         remote_pwd: String,
+        set_remote_credentials_tx: &mpsc::Sender<()>
     ) -> Result<Arc<impl Conn>> {
         let (on_connected_rx, agent_conn) = {
             self.internal
                 .start_connectivity_checks(false, remote_ufrag, remote_pwd)
                 .await?;
+            drop(set_remote_credentials_tx.send(()).await);
 
             let mut on_connected_rx = self.internal.on_connected_rx.lock().await;
             (

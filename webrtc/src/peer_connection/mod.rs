@@ -1573,6 +1573,7 @@ impl RTCPeerConnection {
                     "set_remote_description",
                 ))
                 .await?;
+                self.internal.ice_transport.wait_set_remote_credentials().await;
         }
 
         Ok(())

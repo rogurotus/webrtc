@@ -63,7 +63,6 @@ struct ICETransportInternal {
 
 /// ICETransport allows an application access to information about the ICE
 /// transport over which packets are sent and received.
-#[derive(Default)]
 pub struct RTCIceTransport {
     pub(crate) gatherer: Arc<RTCIceGatherer>,
     on_connection_state_change_handler: Arc<ArcSwapOption<Mutex<OnConnectionStateChangeHdlrFn>>>,
@@ -71,6 +70,15 @@ pub struct RTCIceTransport {
         Arc<ArcSwapOption<Mutex<OnSelectedCandidatePairChangeHdlrFn>>>,
     state: Arc<AtomicU8>, // ICETransportState
     internal: Mutex<ICETransportInternal>,
+    set_remote_credentials_tx: mpsc::Sender<()>,
+    set_remote_credentials_rx: Arc<Mutex<mpsc::Receiver<()>>>,
+}
+
+impl Default for RTCIceTransport {
+    fn default() -> Self {
+        let (set_remote_credentials_tx, set_remote_credentials_rx) = mpsc::channel(1);
+        Self { gatherer: Default::default(), on_connection_state_change_handler: Default::default(), on_selected_candidate_pair_change_handler: Default::default(), state: Default::default(), internal: Default::default(), set_remote_credentials_rx: Arc::new(Mutex::new(set_remote_credentials_rx)), set_remote_credentials_tx }
+    }
 }
 
 impl RTCIceTransport {
@@ -94,6 +102,10 @@ impl RTCIceTransport {
             }
         }
         None
+    }
+
+    pub async fn wait_set_remote_credentials(&self) {
+        self.set_remote_credentials_rx.lock().await.recv().await;
     }
 
     /// Start incoming connectivity checks based on its configured role.
@@ -162,6 +174,7 @@ impl RTCIceTransport {
                             cancel_rx,
                             params.username_fragment.clone(),
                             params.password.clone(),
+                            &self.set_remote_credentials_tx,
                         )
                         .await?
                 }
@@ -172,6 +185,7 @@ impl RTCIceTransport {
                             cancel_rx,
                             params.username_fragment.clone(),
                             params.password.clone(),
+                            &self.set_remote_credentials_tx,
                         )
                         .await?
                 }

@@ -474,15 +474,19 @@ async fn test_connectivity_on_startup() -> Result<()> {
         })
     }));
 
+    let (set_remote_credentials_tx, _) = mpsc::channel(1);
+
+
     tokio::spawn(async move {
-        let result = a_agent.accept(a_cancel_rx, b_ufrag, b_pwd).await;
+        let result = a_agent.accept(a_cancel_rx, b_ufrag, b_pwd, &set_remote_credentials_tx).await;
         assert!(result.is_ok(), "agent accept expected OK");
         drop(accepted_tx);
     });
 
     let _ = accepting_rx.recv().await;
 
-    let _ = b_agent.dial(b_cancel_rx, a_ufrag, a_pwd).await?;
+    let (set_remote_credentials_tx2, _) = mpsc::channel(1);
+    let _ = b_agent.dial(b_cancel_rx, a_ufrag, a_pwd, &set_remote_credentials_tx2).await?;
 
     // Ensure accepted
     let _ = accepted_rx.recv().await;
@@ -873,16 +877,17 @@ async fn test_inbound_validity() -> Result<()> {
 #[tokio::test]
 async fn test_invalid_agent_starts() -> Result<()> {
     let a = Agent::new(AgentConfig::default()).await?;
+    let (set_remote_credentials_tx, _) = mpsc::channel(1);
 
     let (_cancel_tx1, cancel_rx1) = mpsc::channel(1);
-    let result = a.dial(cancel_rx1, "".to_owned(), "bar".to_owned()).await;
+    let result = a.dial(cancel_rx1, "".to_owned(), "bar".to_owned(), &set_remote_credentials_tx).await;
     assert!(result.is_err());
     if let Err(err) = result {
         assert_eq!(Error::ErrRemoteUfragEmpty, err);
     }
 
     let (_cancel_tx2, cancel_rx2) = mpsc::channel(1);
-    let result = a.dial(cancel_rx2, "foo".to_owned(), "".to_owned()).await;
+    let result = a.dial(cancel_rx2, "foo".to_owned(), "".to_owned(), &set_remote_credentials_tx).await;
     assert!(result.is_err());
     if let Err(err) = result {
         assert_eq!(Error::ErrRemotePwdEmpty, err);
@@ -894,14 +899,14 @@ async fn test_invalid_agent_starts() -> Result<()> {
         drop(cancel_tx3);
     });
 
-    let result = a.dial(cancel_rx3, "foo".to_owned(), "bar".to_owned()).await;
+    let result = a.dial(cancel_rx3, "foo".to_owned(), "bar".to_owned(), &set_remote_credentials_tx).await;
     assert!(result.is_err());
     if let Err(err) = result {
         assert_eq!(Error::ErrCanceledByCaller, err);
     }
 
     let (_cancel_tx4, cancel_rx4) = mpsc::channel(1);
-    let result = a.dial(cancel_rx4, "foo".to_owned(), "bar".to_owned()).await;
+    let result = a.dial(cancel_rx4, "foo".to_owned(), "bar".to_owned(), &set_remote_credentials_tx).await;
     assert!(result.is_err());
     if let Err(err) = result {
         assert_eq!(Error::ErrMultipleStart, err);
@@ -1742,21 +1747,23 @@ async fn test_connection_state_connecting_to_failed() -> Result<()> {
 
     let (wf2, wc2) = (is_failed.worker(), is_checking.worker());
     b_agent.on_connection_state_change(connection_state_check(wf2, wc2));
+    let (set_remote_credentials_tx, _) = mpsc::channel(1);
 
     let agent_a = Arc::clone(&a_agent);
     tokio::spawn(async move {
         let (_cancel_tx, cancel_rx) = mpsc::channel(1);
         let result = agent_a
-            .accept(cancel_rx, "InvalidFrag".to_owned(), "InvalidPwd".to_owned())
+            .accept(cancel_rx, "InvalidFrag".to_owned(), "InvalidPwd".to_owned(), &set_remote_credentials_tx)
             .await;
         assert!(result.is_err());
     });
 
+    let (set_remote_credentials_tx2, _) = mpsc::channel(1);
     let agent_b = Arc::clone(&b_agent);
     tokio::spawn(async move {
         let (_cancel_tx, cancel_rx) = mpsc::channel(1);
         let result = agent_b
-            .dial(cancel_rx, "InvalidFrag".to_owned(), "InvalidPwd".to_owned())
+            .dial(cancel_rx, "InvalidFrag".to_owned(), "InvalidPwd".to_owned(), &set_remote_credentials_tx2)
             .await;
         assert!(result.is_err());
     });

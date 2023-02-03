@@ -308,12 +308,13 @@ async fn main() -> Result<(), Error> {
         println!("Connecting...");
 
         let (_cancel_tx, cancel_rx) = mpsc::channel(1);
+        let (set_remote_credentials_tx2, _) = mpsc::channel(1);
         // Start the ICE Agent. One side must be controlled, and the other must be controlling
         let conn: Arc<dyn Conn + Send + Sync> = if is_controlling {
-            ice_agent.dial(cancel_rx, remote_ufrag, remote_pwd).await?
+            ice_agent.dial(cancel_rx, remote_ufrag, remote_pwd, &set_remote_credentials_tx2).await?
         } else {
             ice_agent
-                .accept(cancel_rx, remote_ufrag, remote_pwd)
+                .accept(cancel_rx, remote_ufrag, remote_pwd, &set_remote_credentials_tx2)
                 .await?
         };
 
