@@ -411,7 +411,6 @@ pub(crate) async fn add_transceiver_sdp(
     media_section: &MediaSection,
     params: AddTransceiverSdpParams,
 ) -> Result<(SessionDescription, bool)> {
-    println!("CALL");
     if media_section.transceivers.is_empty() {
         return Err(Error::ErrSDPZeroTransceivers);
     }
@@ -463,7 +462,7 @@ pub(crate) async fn add_transceiver_sdp(
     }
     if codecs.is_empty() {
         // If we are sender and we have no codecs throw an error early
-        if t.sender().await.track().is_some() {
+        if t.sender().track().is_some() {
             return Err(Error::ErrSenderWithNoCodecs);
         }
 
@@ -504,9 +503,7 @@ pub(crate) async fn add_transceiver_sdp(
         return Ok((d, false));
     }
 
-    let parameters = media_engine
-        .get_rtp_parameters_by_kind(t.kind, t.direction())
-        .await;
+    let parameters = media_engine.get_rtp_parameters_by_kind(t.kind, t.direction());
     for rtp_extension in &parameters.header_extensions {
         let ext_url = Url::parse(rtp_extension.uri.as_str())?;
         media = media.with_extmap(sdp::extmap::ExtMap {
@@ -532,7 +529,7 @@ pub(crate) async fn add_transceiver_sdp(
     }
 
     if let Some(mt) = transceivers.first() {
-        let sender = mt.sender().await;
+        let sender = mt.sender();
         if let Some(track) = sender.track() {
             media = media.with_media_source(
                 sender.ssrc,
@@ -571,7 +568,6 @@ pub(crate) async fn add_transceiver_sdp(
             // same rules as for an initial offer.
 
             for stream_id in sender.associated_media_stream_ids() {
-                println!("ADD {track_id}");
                 media = media.with_property_attribute(format!("msid:{stream_id} {track_id}"));
             }
         }
