@@ -356,16 +356,13 @@ mod test {
             let result = check_next_signaling_state(cur, next, op, sdp_type);
             match (&result, &expected_err) {
                 (Ok(got), None) => {
-                    assert_eq!(*got, next, "{} state mismatch", desc);
+                    assert_eq!(*got, next, "{desc} state mismatch");
                 }
                 (Err(got), Some(err)) => {
-                    assert_eq!(got.to_string(), err.to_string(), "{} error mismatch", desc);
+                    assert_eq!(got.to_string(), err.to_string(), "{desc} error mismatch");
                 }
                 _ => {
-                    panic!(
-                        "{}: expected {:?}, but got {:?}",
-                        desc, expected_err, result
-                    );
+                    panic!("{desc}: expected {expected_err:?}, but got {result:?}");
                 }
             };
         }

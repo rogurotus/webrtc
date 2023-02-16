@@ -122,8 +122,7 @@ mod test {
             assert_eq!(
                 RTCIceConnectionState::from(state_string),
                 expected_state,
-                "testCase: {}",
-                expected_state,
+                "testCase: {expected_state}",
             );
         }
     }

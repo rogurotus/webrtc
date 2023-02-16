@@ -95,8 +95,7 @@ mod test {
             assert_eq!(
                 RTCDataChannelState::from(state_string),
                 expected_state,
-                "testCase: {}",
-                expected_state,
+                "testCase: {expected_state}",
             );
         }
     }

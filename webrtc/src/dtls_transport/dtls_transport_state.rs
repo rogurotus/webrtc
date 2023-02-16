@@ -99,8 +99,7 @@ mod test {
             assert_eq!(
                 RTCDtlsTransportState::from(state_string),
                 expected_state,
-                "testCase: {}",
-                expected_state,
+                "testCase: {expected_state}",
             );
         }
     }

@@ -151,9 +151,7 @@ async fn test_pair_priority() -> Result<()> {
                         ..Default::default()
                     }
                     .to_string(),
-                    "Unexpected bestPair {} (expected remote: {})",
-                    best_pair,
-                    remote,
+                    "Unexpected bestPair {best_pair} (expected remote: {remote})",
                 );
             } else {
                 panic!("expected Some, but got None");
@@ -1486,8 +1484,7 @@ async fn test_init_ext_ip_mapping() -> Result<()> {
         assert_eq!(
             Error::ErrIneffectiveNat1to1IpMappingHost,
             err,
-            "Unexpected error: {}",
-            err
+            "Unexpected error: {err}"
         );
     } else {
         panic!("expected error, but got ok");
@@ -1506,8 +1503,7 @@ async fn test_init_ext_ip_mapping() -> Result<()> {
         assert_eq!(
             Error::ErrIneffectiveNat1to1IpMappingSrflx,
             err,
-            "Unexpected error: {}",
-            err
+            "Unexpected error: {err}"
         );
     } else {
         panic!("expected error, but got ok");
@@ -1526,8 +1522,7 @@ async fn test_init_ext_ip_mapping() -> Result<()> {
         assert_eq!(
             Error::ErrMulticastDnsWithNat1to1IpMapping,
             err,
-            "Unexpected error: {}",
-            err
+            "Unexpected error: {err}"
         );
     } else {
         panic!("expected error, but got ok");
@@ -1544,8 +1539,7 @@ async fn test_init_ext_ip_mapping() -> Result<()> {
         assert_eq!(
             Error::ErrInvalidNat1to1IpMapping,
             err,
-            "Unexpected error: {}",
-            err
+            "Unexpected error: {err}"
         );
     } else {
         panic!("expected error, but got ok");
@@ -1735,7 +1729,7 @@ async fn test_connection_state_connecting_to_failed() -> Result<()> {
                     let mut c = wc_clone.lock().await;
                     c.take();
                 } else if c == ConnectionState::Connected || c == ConnectionState::Completed {
-                    panic!("Unexpected ConnectionState: {}", c);
+                    panic!("Unexpected ConnectionState: {c}");
                 }
             })
         });

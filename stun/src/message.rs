@@ -283,7 +283,7 @@ impl Message {
 
         if cookie != MAGIC_COOKIE {
             return Err(Error::Other(format!(
-                "{cookie:x} is invalid magic cookie (should be {MAGIC_COOKIE:x})",
+                "{cookie:x} is invalid magic cookie (should be {MAGIC_COOKIE:x})"
             )));
         }
         if buf.len() < full_size {

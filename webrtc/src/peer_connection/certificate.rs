@@ -121,7 +121,7 @@ impl RTCCertificate {
             return Err(Error::InvalidPEM("empty PEM".into()));
         };
         let expires_pem =
-            pem::parse(first_block).map_err(|e| Error::new(format!("can't parse PEM: {}", e)))?;
+            pem::parse(first_block).map_err(|e| Error::new(format!("can't parse PEM: {e}")))?;
         if expires_pem.tag != "EXPIRES" {
             return Err(Error::InvalidPEM(format!(
                 "invalid tag (expected: 'EXPIRES', got '{}')",

@@ -82,9 +82,7 @@ mod test {
             assert_eq!(
                 ct.to_string(),
                 expected,
-                "failed to stringify chunkType {}, expected {}",
-                ct,
-                expected
+                "failed to stringify chunkType {ct}, expected {expected}"
             );
         }
     }
